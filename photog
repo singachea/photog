@@ -1,0 +1,47 @@
+#!/usr/bin/env ruby
+
+require 'rubygems'
+require 'commander/import'
+require './renderer'
+
+program :name, 'Photo Generator'
+program :version, '1.0.0'
+program :description, 'Generate html photo gallery'
+
+def ask_for_path(message, path)
+  while not Dir.exists? path
+    path = ask message
+  end
+
+  path
+end
+
+command :html do |c|
+  c.syntax = 'photog html'
+  c.description = 'Generate html'
+  c.action do |args, options|
+    @folder = ask_for_path("Enter your path (source): ", "")
+    @dest = ask_for_path("Enter your path (destination): ", "")
+    
+    unless @folder.end_with?("/")
+      @folder = "#{@folder}/"
+    end
+
+    dirs = Dir["#{@folder}*"].sort
+
+    @dirs = dirs.map do |dir|
+      {
+        dir: dir, 
+        imgs: Dir["#{dir}/*.jpg"]
+              .sort
+              .take(3)
+      }
+    end
+
+    r = Renderer.new.render.result(binding) 
+
+    open("#{@dest}/index.html", 'w') { |f|
+      f.puts r
+    }
+  end
+end
